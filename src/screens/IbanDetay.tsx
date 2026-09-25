@@ -19,7 +19,7 @@ import {
 import BankLogo from "../components/BankLogo";
 import Sheet, { PrimaryButton, SecondaryButton, SheetAction } from "../components/Sheet";
 import { analyzeIban, problemMessage } from "../lib/iban";
-import { copyText, vibrate } from "../lib/device";
+import { copyText, shareText, vibrate } from "../lib/device";
 import { formatWhen } from "../lib/format";
 import { useBranch } from "../lib/useBranch";
 import { goBack, navigate } from "../lib/router";
@@ -65,13 +65,7 @@ export default function IbanDetailScreen({ iban: rawIban }: { iban: string }) {
   );
 
   const share = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "IBAN", text: info.formatted });
-      } catch {
-        /* paylaşım iptal edildi */
-      }
-    } else {
+    if ((await shareText("IBAN", info.formatted)) === "unsupported") {
       await copyValue(info.formatted);
       toast("IBAN kopyalandı");
     }

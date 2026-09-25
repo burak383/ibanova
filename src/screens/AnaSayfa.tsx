@@ -20,7 +20,7 @@ import BottomNav from "../components/BottomNav";
 import BankLogo from "../components/BankLogo";
 import Sheet, { PrimaryButton, SecondaryButton } from "../components/Sheet";
 import { IBAN_LENGTH, analyzeIban, caretAfterFormat, formatIban, normalizeIban, problemMessage } from "../lib/iban";
-import { copyText, vibrate } from "../lib/device";
+import { canReadClipboard, copyText, readClipboardText, shareText, vibrate } from "../lib/device";
 import { useBranch } from "../lib/useBranch";
 import { navigate } from "../lib/router";
 import { useApp } from "../store";
@@ -53,9 +53,9 @@ export default function IbanVerificationScreen() {
       return;
     }
     const check = async () => {
-      if (document.visibilityState !== "visible" || !navigator.clipboard?.readText) return;
+      if (document.visibilityState !== "visible" || !canReadClipboard()) return;
       try {
-        const text = await navigator.clipboard.readText();
+        const text = await readClipboardText();
         const found = analyzeIban(text);
         setClipboardIban(found.valid && found.compact !== analyzeIban(input).compact ? found.compact : "");
       } catch {
@@ -86,7 +86,7 @@ export default function IbanVerificationScreen() {
 
   const pasteIban = async () => {
     try {
-      const text = await navigator.clipboard.readText();
+      const text = await readClipboardText();
       if (text) commit(text);
       else toast("Panoda metin yok");
     } catch {
@@ -95,15 +95,8 @@ export default function IbanVerificationScreen() {
   };
 
   const shareIban = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "IBAN doğrulama sonucu", text: info.formatted });
-      } catch {
-        /* kullanıcı paylaşımı iptal etti */
-      }
-    } else {
-      await copyIban();
-    }
+    // İptal edilirse sessiz kal; paylaşım yoksa kopyala
+    if ((await shareText("IBAN doğrulama sonucu", info.formatted)) === "unsupported") await copyIban();
   };
 
   const confirmSave = () => {

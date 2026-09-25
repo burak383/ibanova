@@ -4,7 +4,7 @@ import { ArrowLeft, BadgeCheck, Check, Download, Ellipsis, RotateCcw, Share2, Sh
 import BankLogo from "../components/BankLogo";
 import Sheet, { SheetAction } from "../components/Sheet";
 import { analyzeIban, last4 } from "../lib/iban";
-import { copyText } from "../lib/device";
+import { copyText, shareImageNative } from "../lib/device";
 import { goBack, navigate } from "../lib/router";
 import { useApp } from "../store";
 
@@ -71,6 +71,8 @@ export default function QrCodeScreen({ iban: rawIban }: { iban: string }) {
     setBusy(true);
     try {
       const blob = await renderImage(info.compact, info.formatted, includeIban);
+      // Uygulamada dosya indirilemez; yerel paylaşım menüsü açılır ("Görseli Kaydet" oradan seçilir)
+      if ((await shareImageNative(blob, `iban-qr-${last4(info.compact)}.png`, "IBAN QR kodu")) === "shared") return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -91,6 +93,7 @@ export default function QrCodeScreen({ iban: rawIban }: { iban: string }) {
     setBusy(true);
     try {
       const blob = await renderImage(info.compact, info.formatted, includeIban);
+      if ((await shareImageNative(blob, `iban-qr-${last4(info.compact)}.png`, "IBAN QR kodu")) === "shared") return;
       const file = new File([blob], `iban-qr-${last4(info.compact)}.png`, { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: "IBAN QR kodu" });

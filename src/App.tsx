@@ -56,8 +56,18 @@ function Shell() {
       if (document.visibilityState === "hidden") hiddenAt = Date.now();
       else if (hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) setLocked(true);
     };
+    // Mobil uygulama, arka plana geçip dönüşünü ayrıca bildirir (WebView'da visibilitychange güvenilir değil)
+    const onAppState = (e: Event) => {
+      const state = (e as CustomEvent<string>).detail;
+      if (state === "background") hiddenAt = Date.now();
+      else if (state === "active" && hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) setLocked(true);
+    };
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    window.addEventListener("ibanova:app-state", onAppState);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("ibanova:app-state", onAppState);
+    };
   }, [lockEnabled]);
 
   if (locked && lockEnabled) {

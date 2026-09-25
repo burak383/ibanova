@@ -3,13 +3,18 @@
  * Bu, verilerin bulunduğu cihazda uygulamayı açarken kullanılan yerel bir kilittir;
  * sunucu tarafı doğrulaması yoktur.
  */
+import { isNativeApp, nativeCall } from "./native";
+
 const CRED_KEY = "ibanova:cred";
+/** Uygulamada kilit, telefonun kendi Face ID / parmak izi sistemiyle yapılır (WebView'da WebAuthn yok). */
+const NATIVE_MARK = "native";
 
 const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
 const fromB64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 const random = (n: number) => crypto.getRandomValues(new Uint8Array(n));
 
 export async function isBiometricAvailable(): Promise<boolean> {
+  if (isNativeApp()) return nativeCall<boolean>("biometricAvailable").catch(() => false);
   try {
     return (
       typeof window.PublicKeyCredential !== "undefined" &&
@@ -37,6 +42,17 @@ export function clearCredential() {
 }
 
 export async function enrollBiometric(): Promise<boolean> {
+  if (isNativeApp()) {
+    const ok = await nativeCall<boolean>("biometricAuth", { reason: "Ibanova kilidini açmak için doğrulayın" }).catch(() => false);
+    if (ok) {
+      try {
+        localStorage.setItem(CRED_KEY, NATIVE_MARK);
+      } catch {
+        return false;
+      }
+    }
+    return ok;
+  }
   try {
     const cred = (await navigator.credentials.create({
       publicKey: {
@@ -63,6 +79,10 @@ export async function verifyBiometric(): Promise<boolean> {
   try {
     const stored = localStorage.getItem(CRED_KEY);
     if (!stored) return false;
+    if (isNativeApp() || stored === NATIVE_MARK) {
+      if (!isNativeApp()) return false; // uygulamada kurulan kilit tarayıcıda doğrulanamaz
+      return await nativeCall<boolean>("biometricAuth", { reason: "Ibanova'yı açmak için doğrulayın" });
+    }
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: random(32),
