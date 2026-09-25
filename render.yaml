@@ -1,0 +1,46 @@
+# Render Blueprint: Render panelinde "New > Blueprint" ile bu depoyu seçince web servisi ve
+# PostgreSQL veritabanı birlikte kurulur. Ayrıntılar: README > "Render'a yükleme".
+services:
+  - type: web
+    runtime: node
+    name: ibanova
+    plan: free
+    region: frankfurt
+    # NODE_ENV=production iken npm geliştirme paketlerini atlar; derleme için (vite, tsc) gerekliler
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: IBANOVA_JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ibanova-db
+          property: connectionString
+      # KVKK aydınlatma metnindeki veri sorumlusu bilgileri (derleme sırasında sayfaya yazılır)
+      - key: VITE_VERI_SORUMLUSU
+        sync: false
+      - key: VITE_ILETISIM_EPOSTA
+        sync: false
+      # "Şifremi unuttum" e-postaları için SMTP (boş bırakılırsa özellik kapalı kalır)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+
+databases:
+  - name: ibanova-db
+    plan: free
+    region: frankfurt
+    databaseName: ibanova
+    user: ibanova
+    # Veritabanına yalnızca Render içinden (web servisinden) erişilsin
+    ipAllowList: []

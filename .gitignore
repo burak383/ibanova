@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+# yerel geliştirme verileri — asla depoya girmesin
+server/data.json
+server/data.json.tmp
+server/subeler-cache.json
+server/bankaSubeTumListe.xml
+*.log

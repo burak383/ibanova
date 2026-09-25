@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- YALNIZCA TEST İÇİN örnek veri: TCMB bankaSubeTumListe.xml biçiminde, gerçek liste değildir. -->
+<bankaSubeTumListe xmlns="http://eft.tcmb.gov.tr" tarih="2026-09-01">
+  <bankaSubeleri>
+    <banka><bKd>0010</bKd><bAd>ÖRNEK BANKA</bAd></banka>
+    <sube><bKd>0010</bKd><sKd>00519</sKd><sAd>ÖRNEK KADIKÖY ŞUBESİ</sAd><sIlAd>İSTANBUL</sIlAd><sIlcAd>KADIKÖY</sIlcAd></sube>
+  </bankaSubeleri>
+</bankaSubeTumListe>
