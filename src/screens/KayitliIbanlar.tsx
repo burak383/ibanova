@@ -61,7 +61,7 @@ function AccountCard({ account, selecting, selected, onCopy, onMenu, onEdit, onT
         }
         if (selecting) onToggle(account.id);
       }}
-      className={`select-none rounded-theme border bg-card p-4 shadow-lg ${
+      className={`min-w-0 select-none rounded-theme border bg-card p-4 shadow-lg ${
         selected ? "border-primary ring-2 ring-primary/40" : "border-border"
       }`}
     >
@@ -107,7 +107,7 @@ function AccountCard({ account, selecting, selected, onCopy, onMenu, onEdit, onT
       <div className="mt-5 rounded-xl bg-muted px-3.5 py-3">
         <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">IBAN</p>
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate font-body text-[15px] font-semibold tracking-[0.06em] tabular-nums text-foreground">
+          <p className="min-w-0 truncate font-body text-[13px] font-semibold tracking-[0.01em] tabular-nums text-foreground min-[360px]:text-[15px] min-[360px]:tracking-[0.06em]">
             {info.masked}
           </p>
           <button
@@ -121,8 +121,8 @@ function AccountCard({ account, selecting, selected, onCopy, onMenu, onEdit, onT
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border pt-3">
+        <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarCheck2 className="h-4 w-4 text-success" aria-hidden="true" />
           Son kontrol: {formatDate(account.at)}
         </p>

@@ -81,6 +81,13 @@ Gmail kullanacaksanız normal şifre değil, Google hesabında oluşturulan "uyg
 - Güvenlik başlıkları: Content-Security-Policy (harici betik yok), X-Frame-Options, nosniff, HTTPS'de HSTS.
 - Ön yüz ile API aynı adresten sunulduğu için CORS kapalıdır; başka bir alan adından erişim gerekirse `CORS_ORIGINS=https://a.com,https://b.com`.
 
+## Google Play için adresler
+
+- Gizlilik politikası: `https://ibanova.onrender.com/gizlilik` (JavaScript'siz, sunucunun ürettiği sayfa)
+- Hesap silme: `https://ibanova.onrender.com/hesap-silme`
+
+Metin `shared/policy.js` dosyasındadır; uygulama içindeki Gizlilik ekranı da aynı metni gösterir. Geliştirici adı `VITE_VERI_SORUMLUSU` değişkeninden gelir ve Play Store kaydındaki geliştirici adıyla aynı olmalıdır. Metni değiştirince `SON_GUNCELLEME` tarihini güncelleyin.
+
 ## KVKK
 
 Profil > "Veri gizliliği ve KVKK" ve kayıt ekranı, uygulamanın gerçekte işlediği verilere göre yazılmış bir aydınlatma metni taslağını gösterir (`src/screens/Gizlilik.tsx`). Veri sorumlusu bilgileri girilmezse sayfada "Taslak" uyarısı görünür. Metin hukuki danışmanlık değildir; yayına almadan önce bir hukukçuya kontrol ettirin. Özellikle sunucuların yurt dışında olması durumunda KVKK m.9 kapsamındaki aktarım şartları ayrıca değerlendirilmelidir.

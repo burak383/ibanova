@@ -304,7 +304,7 @@ export default function ProfileScreen() {
                 <LockKeyhole className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">Veri gizliliği ve KVKK</span>
+                <span className="block text-sm font-medium">Gizlilik Politikası ve KVKK</span>
                 <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                   IBAN verileri doğrulama için işlenir; bankacılık hesabınıza erişim sağlanmaz. Aydınlatma metnini
                   okuyun.

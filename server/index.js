@@ -67,6 +67,10 @@ async function main() {
     staticDir: path.join(__dirname, "..", "dist"),
     corsOrigins: (env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean),
     trustProxy,
+    policyInfo: {
+      sorumlu: (env.VITE_VERI_SORUMLUSU || "").trim(),
+      eposta: (env.VITE_ILETISIM_EPOSTA || "").trim(),
+    },
   });
 
   const server = app.listen(PORT, () => {

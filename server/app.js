@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { branchKey } from "./subeler.js";
 import { EmailTakenError } from "./store.js";
+import { deletionHtml, privacyHtml } from "./pages.js";
 
 export const MIN_PASSWORD = 8;
 const RESET_TTL_MS = 60 * 60_000; // şifre sıfırlama bağlantısı 1 saat geçerli
@@ -39,6 +40,7 @@ function safeEqual(a, b) {
  * @param {string} [opts.staticDir]           Derlenmiş ön yüz (dist); verilirse aynı adresten sunulur
  * @param {string[]} [opts.corsOrigins]       Başka kökenden erişime izin verilecek adresler (boşsa CORS kapalı)
  * @param {number | boolean | string} [opts.trustProxy]  Render gibi proxy arkasında gerçek istemci IP'si için
+ * @param {{ sorumlu?: string, eposta?: string }} [opts.policyInfo]  Gizlilik/hesap silme sayfalarındaki geliştirici bilgisi
  */
 export function createApp({
   store,
@@ -50,6 +52,7 @@ export function createApp({
   staticDir,
   corsOrigins = [],
   trustProxy = false,
+  policyInfo = {},
 }) {
   const maxAttempts = rateLimit.maxAttempts ?? 5;
   const windowMs = rateLimit.windowMs ?? 15 * 60_000;
@@ -137,8 +140,8 @@ export function createApp({
       "Content-Security-Policy": [
         "default-src 'self'",
         "script-src 'self'",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "font-src 'self' https://fonts.gstatic.com",
+        "style-src 'self' 'unsafe-inline'",
+        "font-src 'self'",
         "img-src 'self' data: blob:",
         "connect-src 'self'",
         "frame-ancestors 'none'",
@@ -327,6 +330,12 @@ export function createApp({
   });
 
   app.use("/api", (_req, res) => res.status(404).json({ error: "Bulunamadı" }));
+
+  // ---- Google Play'in istediği, JavaScript'siz okunabilen sayfalar ----
+  const pageInfo = () => ({ ...policyInfo, appUrl: appUrl || "" });
+  const sendPage = (res, html) => res.set({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" }).send(html);
+  app.get(["/gizlilik", "/privacy"], (_req, res) => sendPage(res, privacyHtml(pageInfo())));
+  app.get(["/hesap-silme", "/delete-account"], (_req, res) => sendPage(res, deletionHtml(pageInfo())));
 
   // ---- derlenmiş ön yüz (tek serviste yayın) ----
   const indexFile = staticDir ? path.join(staticDir, "index.html") : null;

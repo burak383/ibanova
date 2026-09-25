@@ -359,7 +359,7 @@ export default function AccountScreen() {
                 onClick={() => navigate("/gizlilik")}
                 className="font-medium text-primary underline underline-offset-2"
               >
-                Aydınlatma Metni
+                Gizlilik Politikası ve Aydınlatma Metni
               </button>
               &apos;ni okuduğunuzu onaylarsınız.
             </p>

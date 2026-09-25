@@ -52,7 +52,7 @@ with sync_playwright() as p:
     pg.on(
         "request",
         lambda r: external.append(r.url)
-        if urlparse(r.url).netloc not in (ORIGIN, "fonts.googleapis.com", "fonts.gstatic.com")
+        if urlparse(r.url).netloc != ORIGIN
         and not r.url.startswith("data:")
         else None,
     )
@@ -79,7 +79,7 @@ with sync_playwright() as p:
     pg.goto(URL + "#/iban/TR760001000519786457841326")
     pg.wait_for_selector("#detail-title")
     pg.wait_for_timeout(500)
-    check("hiçbir harici görsel/sunucu isteği yok (yalnızca Google Fonts)", not external, external[:3])
+    check("hiçbir harici sunucuya istek yok (yazı tipleri dahil)", not external, external[:3])
     # Sıfırlama gerçek kullanıcıda boşa döner
     pg.goto(URL + "#/profil")
     pg.wait_for_selector("h1:has-text('Profil')")
@@ -95,10 +95,10 @@ with sync_playwright() as p:
     ctx, pg = new_page(b)
     pg.goto(URL + "#/profil")
     pg.wait_for_selector("h1:has-text('Profil')")
-    pg.click("button:has-text('Veri gizliliği ve KVKK')")
-    pg.wait_for_selector("h1:has-text('Aydınlatma Metni')")
+    pg.click("button:has-text('Gizlilik Politikası ve KVKK')")
+    pg.wait_for_selector("h1:has-text('Gizlilik Politikası')")
     t = pg.locator("main").inner_text()
-    check("profilden aydınlatma metnine gidilir", "KVKK m.11" in t and "Veri sorumlusu" in t)
+    check("profilden aydınlatma metnine gidilir", "KVKK m.11" in t and "veri sorumlusu" in t)
     pg.click("button[aria-label='Geri dön']")
     pg.wait_for_selector("h1:has-text('Profil')")
     check("geri dönülür", True)
@@ -106,8 +106,22 @@ with sync_playwright() as p:
     pg.wait_for_selector("h1:has-text('Hesap')")
     pg.click("button[role=tab]:has-text('Hesap Oluştur')")
     pg.click("button:has-text('Aydınlatma Metni')")
-    pg.wait_for_selector("h1:has-text('Aydınlatma Metni')")
+    pg.wait_for_selector("h1:has-text('Gizlilik Politikası')")
     check("kayıt ekranından aydınlatma metnine gidilir", True)
+    ctx.close()
+
+    # ---------- 2b. Google Play için JavaScript'siz okunabilen sayfalar ----------
+    ctx = b.new_context(java_script_enabled=False)
+    pg = ctx.new_page()
+    for path, must in [
+        ("gizlilik", ["Gizlilik Politikası", "Güvenlik", "Saklama süresi ve silme", "KVKK m.11", "/hesap-silme"]),
+        ("hesap-silme", ["Hesap ve Veri Silme", "Hesabı Sil", "Neler silinir", "E-postayla"]),
+    ]:
+        resp = pg.goto(URL + path)
+        text = pg.locator("body").inner_text()
+        missing = [m for m in must if m not in text]
+        check(f"/{path} JavaScript kapalıyken okunuyor (200, gerekli bölümler var)", resp.status == 200 and not missing, missing)
+    check("gizlilik politikası uygulama içi ekranla aynı başlığı taşır", pg.goto(URL + "gizlilik") and pg.title() == "Ibanova Gizlilik Politikası")
     ctx.close()
 
     # ---------- 3. Şifre en az 8 karakter ----------

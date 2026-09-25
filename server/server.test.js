@@ -230,6 +230,8 @@ describe("yayın ayarları", () => {
       staticDir: dir,
       trustProxy: 1,
       corsOrigins: ["https://izinli.example"],
+      appUrl: "https://ibanova.example",
+      policyInfo: { sorumlu: "Ada <script>alert(1)</script> Yılmaz, İstanbul", eposta: "kvkk@ibanova.example" },
     });
     await new Promise((resolve) => {
       server = app.listen(0, resolve);
@@ -251,6 +253,24 @@ describe("yayın ayarları", () => {
     const r = await fetch(`${base}/api/health`);
     expect(await r.json()).toEqual({ ok: true });
     expect((await fetch(`${base}/api/yok`)).status).toBe(404);
+  });
+
+  it("gizlilik politikası ve hesap silme sayfaları JavaScript'siz HTML olarak sunulur", async () => {
+    for (const p of ["/gizlilik", "/privacy", "/hesap-silme", "/delete-account"]) {
+      const r = await fetch(base + p);
+      expect(r.status).toBe(200);
+      expect(r.headers.get("content-type")).toContain("text/html");
+      const html = await r.text();
+      expect(html).not.toContain("<script");
+      expect(html).toContain("&lt;script&gt;"); // geliştirici adı kaçışlanmış
+    }
+    const html = await (await fetch(`${base}/gizlilik`)).text();
+    expect(html).toContain("<title>Ibanova Gizlilik Politikası</title>");
+    expect(html).toContain('href="mailto:kvkk@ibanova.example"');
+    expect(html).toContain("https://ibanova.example/hesap-silme");
+    expect(html).not.toContain("Taslak");
+    const del = await (await fetch(`${base}/hesap-silme`)).text();
+    expect(del).toContain("Hesabı Sil");
   });
 
   it("CORS yalnızca izinli kökene açık", async () => {
