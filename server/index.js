@@ -54,8 +54,26 @@ async function refreshSubeler() {
 
 const trustProxy = env.TRUST_PROXY !== undefined ? (Number.isNaN(Number(env.TRUST_PROXY)) ? env.TRUST_PROXY : Number(env.TRUST_PROXY)) : PRODUCTION ? 1 : false;
 
+/**
+ * Veritabanı bakım/yükseltme/yeniden başlatma sırasında birkaç dakika erişilemez olabilir.
+ * Bir kez hata alıp kapanmak yerine (yaklaşık 2 dakika boyunca) tekrar dener.
+ */
+async function initStoreWithRetry(attempts = Number(env.DB_CONNECT_ATTEMPTS || 24), delayMs = 5000) {
+  for (let i = 1; ; i++) {
+    try {
+      await store.init();
+      if (i > 1) console.log(`Veritabanına bağlanıldı (${i}. denemede).`);
+      return;
+    } catch (e) {
+      if (i >= attempts) throw e;
+      console.warn(`Veritabanına bağlanılamadı (${e?.code || e?.message}); ${delayMs / 1000} sn sonra tekrar denenecek (${i}/${attempts}).`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function main() {
-  await store.init();
+  await initStoreWithRetry();
   const mailer = await createMailer({ env, production: PRODUCTION });
 
   const app = createApp({

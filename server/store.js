@@ -98,6 +98,12 @@ export class PgStore {
       // SSL tercihleri bağlantı adresinden gelir (ör. harici bağlantıda ?sslmode=require)
       this.pool = new PoolClass({ connectionString: this.connectionString, max: 5 });
     }
+    if (!this.errorHandlerAttached && typeof this.pool.on === "function") {
+      // Veritabanı yeniden başlarsa boştaki bağlantılar hata verir; işleyici yoksa Node tüm süreci çökertir.
+      // Hatayı kaydedip devam ediyoruz: havuz sonraki istekte yeni bağlantı açar.
+      this.pool.on("error", (e) => console.warn(`Veritabanı bağlantısı koptu (${e?.code || e?.message}); yeniden bağlanılacak.`));
+      this.errorHandlerAttached = true;
+    }
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id    TEXT PRIMARY KEY,

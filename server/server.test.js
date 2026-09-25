@@ -298,3 +298,14 @@ describe("yayın ayarları", () => {
     expect((await post("2.2.2.2", "yanlis")).status).toBe(401);
   });
 });
+
+describe("veritabanı dayanıklılığı", () => {
+  it("bağlantı havuzu hata verdiğinde süreç çökmez (veritabanı yeniden başlarken)", async () => {
+    const { EventEmitter } = await import("node:events");
+    const pool = Object.assign(new EventEmitter(), { query: async () => ({ rows: [], rowCount: 0 }) });
+    const store = new PgStore({ pool });
+    await store.init();
+    // İşleyici yoksa EventEmitter "error" olayında hata fırlatır (Node süreci çökerdi)
+    expect(() => pool.emit("error", Object.assign(new Error("terminating connection"), { code: "57P01" }))).not.toThrow();
+  });
+});
