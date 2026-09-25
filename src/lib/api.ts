@@ -106,6 +106,8 @@ export function resetPassword(token: string, newPassword: string) {
 export interface ServerConfig {
   passwordReset: boolean;
   minPassword: number;
+  /** Sunucuda şube listesi yüklü mü; değilse şube adı hiç sorulmaz */
+  branches?: boolean;
 }
 
 let configPromise: Promise<ServerConfig | null> | null = null;
@@ -132,8 +134,13 @@ export function fetchBranch(bankCode: string, branchCode: string): Promise<Branc
   const key = `${bankCode}-${branchCode}`;
   let p = branchCache.get(key);
   if (!p) {
-    p = request<BranchInfo>(`/sube?banka=${encodeURIComponent(bankCode)}&sube=${encodeURIComponent(branchCode)}`)
-      .then((b) => (b && typeof b.ad === "string" ? b : null))
+    p = fetchConfig()
+      .then((c) => {
+        // Sunucuda liste yoksa boşuna istek atma (tarayıcı konsolunda 503 hatası da çıkmasın)
+        if (c && c.branches === false) return null;
+        return request<BranchInfo>(`/sube?banka=${encodeURIComponent(bankCode)}&sube=${encodeURIComponent(branchCode)}`)
+          .then((b) => (b && typeof b.ad === "string" ? b : null));
+      })
       .catch((e: unknown) => {
         // Geçici hatalarda (sunucu kapalı, liste yükleniyor) sonraki denemede tekrar sorulsun
         if (!(e instanceof ApiError) || e.status !== 404) branchCache.delete(key);

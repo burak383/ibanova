@@ -38,7 +38,8 @@ services:
 
 databases:
   - name: ibanova-db
-    plan: free
+    # Ücretli plan (~6 $/ay, 1 GB): ücretsiz plan 30 gün sonra silinir, bu plan kalıcıdır
+    plan: basic-256mb
     region: frankfurt
     databaseName: ibanova
     user: ibanova

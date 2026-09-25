@@ -154,7 +154,14 @@ export function createApp({
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
-  app.get("/api/config", (_req, res) => res.json({ passwordReset: Boolean(mailer.available), minPassword: MIN_PASSWORD }));
+  app.get("/api/config", (_req, res) => {
+    const s = getSubeler();
+    res.json({
+      passwordReset: Boolean(mailer.available),
+      minPassword: MIN_PASSWORD,
+      branches: Boolean(s && Object.keys(s).length),
+    });
+  });
 
   app.post("/api/auth/signup", async (req, res) => {
     const { email, password, name } = req.body ?? {};

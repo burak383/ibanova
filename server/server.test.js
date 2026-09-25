@@ -187,9 +187,12 @@ describe.each(KINDS)("hesap API'si (%s deposu)", (kind) => {
     });
   });
 
-  it("yapılandırma: şifre sıfırlama açık, en az şifre 8", async () => {
-    const r = await call("GET", "/config");
-    expect(r.body).toEqual({ passwordReset: true, minPassword: 8 });
+  it("yapılandırma: şifre sıfırlama açık, en az şifre 8, şube listesi durumu", async () => {
+    subeler = null;
+    expect((await call("GET", "/config")).body).toEqual({ passwordReset: true, minPassword: 8, branches: false });
+    subeler = parseSubeXml(SAMPLE_XML);
+    expect((await call("GET", "/config")).body.branches).toBe(true);
+    subeler = null;
   });
 
   it("şube uç noktası: liste yoksa 503, bulunursa ad döner, yoksa 404", async () => {

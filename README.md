@@ -68,7 +68,7 @@ Gmail kullanacaksanız normal şifre değil, Google hesabında oluşturulan "uyg
 
 ### Render ücretsiz planıyla ilgili bilinmesi gerekenler
 
-- **Ücretsiz PostgreSQL 30 gün sonra sona erer**; 14 günlük ek sürede ücretli plana geçilmezse veritabanı ve içindeki hesaplar silinir. Kalıcı kullanım için veritabanını ücretli plana yükseltin ya da ücretsiz ve süresiz bir PostgreSQL hizmetinin (ör. Neon, Supabase) bağlantı adresini `DATABASE_URL` olarak girin.
+- **Veritabanı ücretli planda (`basic-256mb`, yaklaşık 6 $/ay, 1 GB).** Render'ın ücretsiz PostgreSQL'i 30 gün sonra silindiği için kalıcı kullanımda ücretli plan seçildi. Ücretsiz denemek isterseniz `render.yaml`'da `plan: free` yapabilirsiniz; ya da süresiz ücretsiz bir PostgreSQL hizmetinin (ör. Neon) bağlantı adresini `DATABASE_URL` olarak girebilirsiniz.
 - Ücretsiz web servisi 15 dakika istek almazsa uyur; ilk açılış yaklaşık 1 dakika sürer. Veriler etkilenmez (veritabanında durur).
 - Ücretsiz servisin dosya sistemi kalıcı değildir; bu yüzden sunucu yayında `DATABASE_URL` olmadan başlamayı reddeder.
 
