@@ -32,10 +32,6 @@
         "android.permission.READ_MEDIA_AUDIO",
         "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW"
-      ],
-      "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -56,13 +52,14 @@
         {
           "faceIDPermission": "Ibanova, uygulama kilidini açmak için Face ID kullanır."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "appUrl": "https://ibanova.onrender.com",
-      "eas": {
-        "projectId": "c1775ff7-48bd-4a56-8045-aa6e5b5bc069"
-      }
+      "revenuecatIosKey": "",
+      "revenuecatAndroidKey": "",
+      "revenuecatEntitlement": "premium"
     }
   }
 }

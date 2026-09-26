@@ -6,7 +6,9 @@ import {
   Check,
   ClipboardPaste,
   Copy,
+  Crown,
   Keyboard,
+  Lock,
   MapPin,
   QrCode,
   Search,
@@ -26,7 +28,8 @@ import { navigate } from "../lib/router";
 import { useApp } from "../store";
 
 export default function IbanVerificationScreen() {
-  const { input, setInput, recordCheck, isSaved, saveIban, settings, toast, profileName } = useApp();
+  const { input, setInput, recordCheck, isSaved, saveIban, settings, toast, profileName, unlimited, freeLeft, canCheck, consumeCheck } =
+    useApp();
   const firstName = profileName.trim().split(/\s+/)[0] || "";
   const [labelOpen, setLabelOpen] = useState(false);
   const [label, setLabel] = useState("");
@@ -35,8 +38,10 @@ export default function IbanVerificationScreen() {
   const caret = useRef<number | null>(null);
 
   const info = useMemo(() => analyzeIban(input), [input]);
+  // Günlük ücretsiz hak dolduysa sonuç gösterilmez (bugün zaten bakılmış IBAN'lar hariç)
+  const locked = info.complete && !canCheck(info.compact);
   const saved = info.valid && isSaved(info.compact);
-  const branch = useBranch(info.bankCode, info.branch, info.valid);
+  const branch = useBranch(info.bankCode, info.branch, info.valid && !locked);
 
   // Biçimlendirme sonrası imleci doğru yere geri koy
   useLayoutEffect(() => {
@@ -75,7 +80,11 @@ export default function IbanVerificationScreen() {
     }
 
     setInput(formatted);
-    if (next.length === IBAN_LENGTH) recordCheck(next);
+    if (next.length === IBAN_LENGTH && canCheck(next)) {
+      // Yalnızca geçerli IBAN günlük hakkı harcar; yazım hatası yüzünden hak gitmesin
+      if (analyzeIban(next).valid) consumeCheck(next);
+      recordCheck(next);
+    }
   };
 
   const copyIban = async () => {
@@ -252,6 +261,29 @@ export default function IbanVerificationScreen() {
               Yazdıkça kontrol edilir ve gruplandırılır.
             </p>
           </div>
+
+          {!unlimited && (
+            <button
+              type="button"
+              onClick={() => navigate("/abonelik")}
+              data-testid="free-quota"
+              className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left text-xs"
+            >
+              <span className="text-muted-foreground">
+                {freeLeft > 0 ? (
+                  <>
+                    Bugün <span className="font-semibold text-foreground">{freeLeft} ücretsiz sorgu</span> hakkınız var
+                  </>
+                ) : (
+                  "Bugünkü ücretsiz sorgunuzu kullandınız"
+                )}
+              </span>
+              <span className="flex shrink-0 items-center gap-1 font-semibold text-primary">
+                <Crown size={14} />
+                Premium
+              </span>
+            </button>
+          )}
         </section>
 
         <section className="mt-6" aria-labelledby="result-title">
@@ -259,10 +291,32 @@ export default function IbanVerificationScreen() {
             <h2 id="result-title" className="font-heading text-base font-semibold">
               Doğrulama sonucu
             </h2>
-            <span className="text-xs text-muted-foreground">{info.complete ? "Şimdi" : ""}</span>
+            <span className="text-xs text-muted-foreground">{info.complete && !locked ? "Şimdi" : ""}</span>
           </div>
 
-          {!info.complete ? (
+          {locked ? (
+            <article
+              className="rounded-theme border border-primary/40 bg-card px-5 py-6 text-center"
+              aria-live="polite"
+              data-testid="locked-result"
+            >
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <Lock size={22} />
+              </div>
+              <h3 className="mt-3 font-heading text-base font-semibold">Günlük ücretsiz sorgunuz doldu</h3>
+              <p className="mx-auto mt-1.5 max-w-[280px] text-xs leading-5 text-muted-foreground">
+                Bu IBAN&apos;ın sonucunu görmek için Premium&apos;a geçin. Ücretsiz hakkınız yarın yenilenir.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/abonelik")}
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-theme bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+              >
+                <Crown size={17} />
+                Sınırsız sorgu için Premium
+              </button>
+            </article>
+          ) : !info.complete ? (
             <article className="rounded-theme border border-border bg-card px-4 py-6 text-center" aria-live="polite">
               <p className="font-heading text-sm font-semibold">
                 {info.compact.length === 0 ? "IBAN bekleniyor" : "Yazmaya devam edin"}
@@ -370,7 +424,7 @@ export default function IbanVerificationScreen() {
             </article>
           )}
 
-          {info.valid && (
+          {info.valid && !locked && (
             <button
               type="button"
               disabled={saved}

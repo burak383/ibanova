@@ -11,7 +11,16 @@ export type NativeMethod =
   | "readClipboard"
   | "haptic"
   | "biometricAvailable"
-  | "biometricAuth";
+  | "biometricAuth"
+  | "subStatus"
+  | "subPlans"
+  | "subPurchase"
+  | "subRestore"
+  | "subLogin"
+  | "subLogout"
+  | "subManage"
+  | "quotaGet"
+  | "quotaSet";
 
 interface NativeBridge {
   platform: "ios" | "android";

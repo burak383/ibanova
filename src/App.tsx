@@ -13,6 +13,10 @@ import QrKod from "./screens/QrKod";
 import Hesap from "./screens/Hesap";
 import Gizlilik from "./screens/Gizlilik";
 import SifreSifirla from "./screens/SifreSifirla";
+import Abonelik from "./screens/Abonelik";
+import UygulamayiIndir from "./screens/UygulamayiIndir";
+import { isNativeApp } from "./lib/native";
+import { isDemo, isWebTest } from "./store";
 
 function Screen() {
   const route = useRoute();
@@ -29,6 +33,8 @@ function Screen() {
       return <Gizlilik />;
     case "reset":
       return <SifreSifirla token={route.token} />;
+    case "subscription":
+      return <Abonelik />;
     case "detail":
       return <IbanDetay iban={route.iban} />;
     case "qr":
@@ -40,7 +46,22 @@ function Screen() {
 
 const RELOCK_AFTER_MS = 60_000;
 
+/**
+ * Ibanova yalnızca mobil uygulamada kullanılır (abonelik App Store / Google Play üzerinden satılır).
+ * Tarayıcıda yalnızca e-postadaki şifre sıfırlama bağlantısı çalışır; geri kalan her şey indirme sayfasına gider.
+ * Yerel geliştirmede ve örnek veri modunda (testler, ekran görüntüleri) web açık kalır.
+ */
+function webAllowed(): boolean {
+  return isNativeApp() || import.meta.env.DEV || isDemo() || isWebTest();
+}
+
 function Shell() {
+  const route = useRoute();
+  if (!webAllowed() && route.name !== "reset") return <UygulamayiIndir />;
+  return <AppShell />;
+}
+
+function AppShell() {
   const { settings, resetAll } = useApp();
   const lockEnabled = settings.biometric && hasCredential();
   const [locked, setLocked] = useState(lockEnabled);

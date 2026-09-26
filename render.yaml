@@ -24,6 +24,12 @@ services:
         sync: false
       - key: VITE_ILETISIM_EPOSTA
         sync: false
+      # App Store sayfası (tarayıcıdan girenlere "indir" bağlantısı olarak gösterilir; yayından sonra girin)
+      - key: VITE_APP_STORE_URL
+        sync: false
+      # RevenueCat gizli anahtarı (sk_...): hesap silinince abone kaydını da siler
+      - key: REVENUECAT_SECRET_KEY
+        sync: false
       # "Şifremi unuttum" e-postaları için SMTP (boş bırakılırsa özellik kapalı kalır)
       - key: SMTP_HOST
         sync: false

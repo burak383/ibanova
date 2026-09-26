@@ -35,6 +35,8 @@ describe.each(KINDS)("hesap API'si (%s deposu)", (kind) => {
   let subeler = null;
   let store;
   const mails = [];
+  const deletedIds = [];
+  let failCleanup = false;
 
   beforeAll(async () => {
     store = await makeStore(kind);
@@ -46,6 +48,10 @@ describe.each(KINDS)("hesap API'si (%s deposu)", (kind) => {
       rateLimit: { maxAttempts: 3, windowMs: 60_000, lockMs: 60_000 },
       mailer: { available: true, send: async (m) => mails.push(m) },
       appUrl: "https://ibanova.example",
+      onAccountDeleted: async (id) => {
+        deletedIds.push(id);
+        if (failCleanup) throw new Error("RevenueCat erişilemez");
+      },
     });
     await new Promise((resolve) => {
       server = app.listen(0, resolve);
@@ -125,10 +131,25 @@ describe.each(KINDS)("hesap API'si (%s deposu)", (kind) => {
   it("hesap silme şifre ister; silinen hesabın oturumu ve girişi çalışmaz", async () => {
     const { body } = await signup("sil@x.com");
     expect((await call("DELETE", "/me", { password: "yanlis" }, body.token)).status).toBe(403);
+    expect(deletedIds).toHaveLength(0);
     expect((await call("DELETE", "/me", { password: PW }, body.token)).status).toBe(200);
+    // Abone kaydı temizliği hesabın kimliğiyle (JWT sub) çağrılır
+    const sub = JSON.parse(Buffer.from(body.token.split(".")[1], "base64url").toString()).sub;
+    expect(deletedIds).toEqual([sub]);
     expect((await call("GET", "/me", null, body.token)).status).toBe(401);
     expect((await login("sil@x.com")).status).toBe(401);
     expect((await signup("sil@x.com")).status).toBe(201);
+  });
+
+  it("abone kaydı temizliği başarısız olsa da hesap silinir", async () => {
+    const { body } = await signup("sil2@x.com");
+    failCleanup = true;
+    try {
+      expect((await call("DELETE", "/me", { password: PW }, body.token)).status).toBe(200);
+    } finally {
+      failCleanup = false;
+    }
+    expect((await login("sil2@x.com")).status).toBe(401);
   });
 
   describe("şifremi unuttum", () => {
@@ -256,7 +277,7 @@ describe("yayın ayarları", () => {
   });
 
   it("gizlilik politikası ve hesap silme sayfaları JavaScript'siz HTML olarak sunulur", async () => {
-    for (const p of ["/gizlilik", "/privacy", "/hesap-silme", "/delete-account", "/destek", "/support"]) {
+    for (const p of ["/gizlilik", "/privacy", "/hesap-silme", "/delete-account", "/destek", "/support", "/kosullar", "/terms"]) {
       const r = await fetch(base + p);
       expect(r.status).toBe(200);
       expect(r.headers.get("content-type")).toContain("text/html");
@@ -273,8 +294,14 @@ describe("yayın ayarları", () => {
     expect(html).toContain('href="mailto:kvkk@ibanova.example"');
     expect(html).toContain("https://ibanova.example/hesap-silme");
     expect(html).not.toContain("Taslak");
+    expect(html).toContain("RevenueCat");
     const del = await (await fetch(`${base}/hesap-silme`)).text();
     expect(del).toContain("Hesabı Sil");
+    expect(del).toContain("aboneliği durdurmaz");
+    const terms = await (await fetch(`${base}/kosullar`)).text();
+    expect(terms).toContain("<title>Ibanova Kullanım Koşulları</title>");
+    expect(terms).toContain("otomatik olarak yenilenir");
+    expect(terms).toContain('href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"');
   });
 
   it("CORS yalnızca izinli kökene açık", async () => {

@@ -20,6 +20,18 @@ import {
   pushMe,
   signup as apiSignup,
 } from "./lib/api";
+import { isNativeApp, nativeCall } from "./lib/native";
+import { EMPTY_QUOTA, canCheckFree, consume, freeLeft as quotaFreeLeft, localDay, mergeQuota, parseQuota, type QuotaState } from "./lib/quota";
+import {
+  cacheStatus,
+  fetchStatus,
+  linkUser,
+  loadCachedStatus,
+  sanitizeStatus,
+  unlinkUser,
+  userIdFromToken,
+  type SubStatus,
+} from "./lib/subscription";
 
 export interface CheckRecord {
   id: string;
@@ -58,6 +70,7 @@ export interface Account {
 const STORAGE_KEY = "ibanova:v1";
 const TOKEN_KEY = "ibanova:token";
 const ACCOUNT_KEY = "ibanova:account";
+const QUOTA_KEY = "ibanova:quota";
 /**
  * Geliştirme/test için örnek veri modu: localStorage'da `ibanova:demo = "1"` varsa ilk açılışta ve
  * sıfırlamada örnek veriler yüklenir. Gerçek kullanıcılar her zaman boş bir uygulamayla başlar.
@@ -66,6 +79,18 @@ const DEMO_KEY = "ibanova:demo";
 export function isDemo(): boolean {
   try {
     return localStorage.getItem(DEMO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Uçtan uca testler için: tarayıcıda (uygulama dışında) web sürümünü açık tutar. Gerçek kullanıcıya
+ * bir şey kazandırmaz; web'de satın alma olmadığı için yalnızca örnek/test kullanımı içindir.
+ */
+export function isWebTest(): boolean {
+  try {
+    return localStorage.getItem("ibanova:web") === "1";
   } catch {
     return false;
   }
@@ -204,6 +229,18 @@ interface Ctx {
   deleteAccount: (password: string) => Promise<void>;
   /** E-postadaki bağlantıyla yeni şifre belirler ve giriş yapar. */
   completeReset: (token: string, newPassword: string) => Promise<void>;
+  /** Abonelik (yalnızca mobil uygulamada satın alınır) */
+  sub: SubStatus;
+  setSubStatus: (s: SubStatus) => void;
+  refreshSub: () => Promise<void>;
+  /** Sınırsız sorgu: aktif abonelik, örnek veri modu ya da abonelik altyapısı henüz kurulmamış */
+  unlimited: boolean;
+  /** Bugün kalan ücretsiz sorgu */
+  freeLeft: number;
+  /** Bu IBAN'ın sonucu gösterilebilir mi (abone ya da bugünkü ücretsiz hak) */
+  canCheck: (iban: string) => boolean;
+  /** Geçerli bir IBAN gösterildiğinde günlük hakkı harcar */
+  consumeCheck: (iban: string) => void;
 }
 
 const AppContext = createContext<Ctx | null>(null);
@@ -239,6 +276,97 @@ export function AppProvider({ children }: { children: ReactNode }) {
       /* depolama kapalı: oturum yalnızca bellekte sürer */
     }
   };
+
+  // --- Abonelik ve günlük ücretsiz hak ---
+  const demo = isDemo();
+  const [sub, setSub] = useState<SubStatus>(loadCachedStatus);
+  const [quota, setQuota] = useState<QuotaState>(() => {
+    try {
+      return parseQuota(localStorage.getItem(QUOTA_KEY));
+    } catch {
+      return EMPTY_QUOTA;
+    }
+  });
+  const [day, setDay] = useState(localDay);
+  // Telefonun anahtarlığındaki kayıt okunmadan oraya yazma (boş durumla üzerine yazmasın)
+  const nativeQuotaLoaded = useRef(!isNativeApp());
+
+  const setSubStatus = useCallback((s: SubStatus) => {
+    setSub(s);
+    cacheStatus(s);
+  }, []);
+
+  const refreshSub = useCallback(async () => {
+    if (!isNativeApp()) return;
+    try {
+      setSubStatus(await fetchStatus());
+    } catch {
+      /* çevrimdışı: son bilinen durum geçerli */
+    }
+  }, [setSubStatus]);
+
+  useEffect(() => {
+    refreshSub();
+    if (isNativeApp()) {
+      nativeCall<string>("quotaGet")
+        .then((raw) => setQuota((q) => mergeQuota(q, parseQuota(raw))))
+        .catch(() => {})
+        .finally(() => {
+          nativeQuotaLoaded.current = true;
+        });
+    }
+    const onSub = (e: Event) => setSubStatus(sanitizeStatus((e as CustomEvent<unknown>).detail));
+    const onActive = (e?: Event) => {
+      if (e && (e as CustomEvent<string>).detail !== "active") return;
+      setDay(localDay());
+      refreshSub();
+    };
+    const onFocus = () => setDay(localDay());
+    window.addEventListener("ibanova:sub", onSub);
+    window.addEventListener("ibanova:app-state", onActive);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("ibanova:sub", onSub);
+      window.removeEventListener("ibanova:app-state", onActive);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refreshSub, setSubStatus]);
+
+  useEffect(() => {
+    const raw = JSON.stringify(quota);
+    try {
+      localStorage.setItem(QUOTA_KEY, raw);
+    } catch {
+      /* depolama kapalı */
+    }
+    if (isNativeApp() && nativeQuotaLoaded.current && quota.day) nativeCall("quotaSet", { value: raw }).catch(() => {});
+  }, [quota]);
+
+  // Hesaba giriş yapılınca abonelik hesaba bağlanır; çıkışta bağ çözülür
+  const linkedUser = useRef<string | null>(null);
+  useEffect(() => {
+    const userId = userIdFromToken(token);
+    if (userId === linkedUser.current) return;
+    const prev = linkedUser.current;
+    linkedUser.current = userId;
+    const op = userId ? linkUser(userId) : prev ? unlinkUser() : Promise.resolve(null);
+    op.then((s) => s && setSubStatus(s)).catch(() => {});
+  }, [token, setSubStatus]);
+
+  const unlimited = demo || sub.active || !sub.available;
+  const canCheck = useCallback(
+    (iban: string) => unlimited || canCheckFree(quota, iban, day),
+    [unlimited, quota, day],
+  );
+  const consumeCheck = useCallback(
+    (iban: string) => {
+      if (unlimited) return;
+      const today = localDay();
+      setDay(today);
+      setQuota((q) => consume(q, iban, today));
+    },
+    [unlimited],
+  );
 
   const accountRef = useRef(account);
   accountRef.current = account;
@@ -451,8 +579,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
       changePassword,
       deleteAccount,
       completeReset,
+      sub,
+      setSubStatus,
+      refreshSub,
+      unlimited,
+      freeLeft: unlimited ? Infinity : quotaFreeLeft(quota, day),
+      canCheck,
+      consumeCheck,
     }),
-    [data, input, recordCheck, toast, toastMessage, account, authBusy, signIn, signUp, signOut, changePassword, deleteAccount, completeReset],
+    [
+      data,
+      input,
+      recordCheck,
+      toast,
+      toastMessage,
+      account,
+      authBusy,
+      signIn,
+      signUp,
+      signOut,
+      changePassword,
+      deleteAccount,
+      completeReset,
+      sub,
+      setSubStatus,
+      refreshSub,
+      unlimited,
+      quota,
+      day,
+      canCheck,
+      consumeCheck,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

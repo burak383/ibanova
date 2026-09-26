@@ -11,6 +11,7 @@ import {
   ChevronRight,
   CircleHelp,
   ClipboardPaste,
+  Crown,
   Hand,
   LockKeyhole,
   LogIn,
@@ -65,7 +66,8 @@ function Toggle({ enabled, onChange, label }: { enabled: boolean; onChange: () =
 }
 
 export default function ProfileScreen() {
-  const { history, saved, settings, updateSetting, resetAll, toast, profileName, setProfileName, account } = useApp();
+  const { history, saved, settings, updateSetting, resetAll, toast, profileName, setProfileName, account, sub, unlimited, freeLeft } =
+    useApp();
   const [bioSupported, setBioSupported] = useState<boolean | null>(null);
   const [bioBusy, setBioBusy] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
@@ -198,6 +200,32 @@ export default function ProfileScreen() {
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </button>
+
+          {(sub.available || sub.active) && (
+            <button
+              type="button"
+              onClick={() => navigate("/abonelik")}
+              data-testid="premium-row"
+              className="mt-3 flex w-full items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3.5 text-left"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card text-primary">
+                  <Crown className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">Ibanova Premium</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {sub.active
+                      ? "Aktif · sınırsız IBAN kontrolü"
+                      : unlimited
+                        ? "Sınırsız IBAN kontrolü"
+                        : `Ücretsiz plan · bugün ${freeLeft} sorgu hakkı`}
+                  </span>
+                </span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </button>
+          )}
         </section>
 
         <section className="mt-6" aria-labelledby="privacy-title">

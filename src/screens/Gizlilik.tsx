@@ -63,6 +63,9 @@ export default function PrivacyScreen() {
           <a href="/hesap-silme" target="_blank" rel="noopener" className="flex items-center gap-2 text-primary">
             <ExternalLink className="h-4 w-4" /> Hesap ve veri silme
           </a>
+          <a href="/kosullar" target="_blank" rel="noopener" className="flex items-center gap-2 text-primary">
+            <ExternalLink className="h-4 w-4" /> Kullanım Koşulları
+          </a>
         </div>
       </main>
     </div>

@@ -7,6 +7,7 @@ export type Route =
   | { name: "profile" }
   | { name: "account" }
   | { name: "privacy" }
+  | { name: "subscription" }
   | { name: "reset"; token: string }
   | { name: "detail"; iban: string }
   | { name: "qr"; iban: string };
@@ -34,6 +35,8 @@ export function parseRoute(hash: string): Route {
       return { name: "account" };
     case "gizlilik":
       return { name: "privacy" };
+    case "abonelik":
+      return { name: "subscription" };
     case "sifre-sifirla":
       return arg ? { name: "reset", token: decode(arg) } : { name: "account" };
     case "iban":

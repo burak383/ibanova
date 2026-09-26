@@ -9,6 +9,9 @@ import time
 import uuid
 from playwright.sync_api import sync_playwright
 
+# Web sürümü yalnızca uygulamada açılır; testler tarayıcıda çalıştığı için test bayrağıyla açık tutulur
+WEB_TEST = "try { localStorage.setItem('ibanova:web', '1') } catch (e) {}"
+
 URL = os.environ.get("E2E_URL", "http://localhost:4173/")
 results = []
 
@@ -26,6 +29,7 @@ with sync_playwright() as p:
 
     # ---------- 1. Hesap oluşturma ve cihaz verisinin hesaba taşınması ----------
     ctx = b.new_context(viewport={"width": 393, "height": 852})
+    ctx.add_init_script(WEB_TEST)
     pg = ctx.new_page()
     pg.goto(URL)
     pg.wait_for_selector("#iban")
@@ -52,6 +56,7 @@ with sync_playwright() as p:
 
     # ---------- 2. Farklı bir cihaz/bağlamda giriş yapınca hesaptaki veriler gelir ----------
     ctx2 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx2.add_init_script(WEB_TEST)
     pg2 = ctx2.new_page()
     pg2.goto(URL + "#/hesap")
     pg2.wait_for_selector("h1:has-text('Hesap')")
@@ -72,6 +77,7 @@ with sync_playwright() as p:
 
     # ---------- 3. Yanlış şifre ve tekrar kayıt reddedilir ----------
     ctx3 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx3.add_init_script(WEB_TEST)
     pg3 = ctx3.new_page()
     pg3.goto(URL + "#/hesap")
     pg3.wait_for_selector("h1:has-text('Hesap')")
@@ -93,6 +99,7 @@ with sync_playwright() as p:
 
     # ---------- 4. Çıkış yapınca cihaz verisi silinmez, sadece senkron durur ----------
     ctx4 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx4.add_init_script(WEB_TEST)
     pg4 = ctx4.new_page()
     pg4.goto(URL + "#/hesap")
     pg4.wait_for_selector("h1:has-text('Hesap')")
@@ -119,6 +126,7 @@ with sync_playwright() as p:
 
     # ---------- 5. Profil adı değişince hesap adı da güncellenir ----------
     ctx5 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx5.add_init_script(WEB_TEST)
     pg5 = ctx5.new_page()
     login(pg5, EMAIL, PASSWORD)
     pg5.wait_for_selector("h1:has-text('Profil')", timeout=5000)
@@ -132,11 +140,14 @@ with sync_playwright() as p:
     # ---------- 6. Şifre değiştirme: eski oturum kapanır, yeni şifreyle girilir ----------
     NEW_PASSWORD = "daha-guclu-2"
     ctxA = b.new_context(viewport={"width": 393, "height": 852})  # "diğer cihaz"
+    ctxA.add_init_script(WEB_TEST)
     pgA = ctxA.new_page()
     login(pgA, EMAIL, PASSWORD)
     pgA.wait_for_selector("h1:has-text('Profil')", timeout=5000)
 
     ctx6 = b.new_context(viewport={"width": 393, "height": 852})
+
+    ctx6.add_init_script(WEB_TEST)
     pg6 = ctx6.new_page()
     login(pg6, EMAIL, PASSWORD)
     pg6.wait_for_selector("h1:has-text('Profil')", timeout=5000)
@@ -166,6 +177,8 @@ with sync_playwright() as p:
     ctxA.close()
 
     ctx7 = b.new_context(viewport={"width": 393, "height": 852})
+
+    ctx7.add_init_script(WEB_TEST)
     pg7 = ctx7.new_page()
     login(pg7, EMAIL, PASSWORD)
     pg7.wait_for_selector("[role=alert]")
@@ -179,6 +192,7 @@ with sync_playwright() as p:
     # ---------- 7. Çok sayıda hatalı giriş geçici kilide yol açar ----------
     LOCK_EMAIL = f"kilit-{uuid.uuid4().hex[:6]}@ornek.com"
     ctx8 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx8.add_init_script(WEB_TEST)
     pg8 = ctx8.new_page()
     pg8.goto(URL + "#/hesap")
     pg8.wait_for_selector("h1:has-text('Hesap')")
@@ -223,6 +237,7 @@ with sync_playwright() as p:
 
     # ---------- 9. Şube adı (TCMB listesi biçimindeki test verisiyle) ----------
     ctx9 = b.new_context(viewport={"width": 393, "height": 852})
+    ctx9.add_init_script(WEB_TEST)
     pg9 = ctx9.new_page()
     pg9.goto(URL)
     pg9.wait_for_selector("#iban")

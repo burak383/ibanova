@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { createMailer } from "./mailer.js";
 import { createStore } from "./store.js";
 import { loadSubeler } from "./subeler.js";
+import { revenuecatDeleter } from "./revenuecat.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const env = process.env;
@@ -89,11 +90,13 @@ async function main() {
       sorumlu: (env.VITE_VERI_SORUMLUSU || "").trim(),
       eposta: (env.VITE_ILETISIM_EPOSTA || "").trim(),
     },
+    onAccountDeleted: revenuecatDeleter((env.REVENUECAT_SECRET_KEY || "").trim()),
   });
 
   const server = app.listen(PORT, () => {
     console.log(`Ibanova ${PRODUCTION ? "yayında" : "geliştirme"} — http://localhost:${PORT}`);
     console.log(`  Veritabanı: ${env.DATABASE_URL ? "PostgreSQL" : "yerel dosya (server/data.json)"}`);
+    console.log(`  RevenueCat kayıt silme: ${env.REVENUECAT_SECRET_KEY ? "açık" : "kapalı (REVENUECAT_SECRET_KEY yok)"}`);
     console.log(
       `  Şifre sıfırlama e-postası: ${mailer.kind === "smtp" ? "SMTP" : mailer.kind === "console" ? "konsola yazılır (geliştirme)" : "kapalı (SMTP ayarlı değil)"}`,
     );

@@ -1,7 +1,7 @@
 /**
  * Ibanova mobil uygulaması: canlı web uygulamasını (ibanova.onrender.com) tam ekran bir WebView'da açar ve
  * web'in tek başına yapamadığı telefon özelliklerini bir köprüyle sağlar: paylaşım menüsü, QR görselini
- * paylaşma/kaydetme, pano, titreşim ve Face ID / parmak izi kilidi.
+ * paylaşma/kaydetme, pano, titreşim, Face ID / parmak izi kilidi ve App Store / Google Play aboneliği.
  *
  * Köprü sözleşmesi web tarafında src/lib/native.ts dosyasındadır.
  */
@@ -17,8 +17,10 @@ import * as Sharing from "expo-sharing";
 import { File, Paths } from "expo-file-system";
 import Constants from "expo-constants";
 import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
+import * as Sub from "./subscription";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+Sub.configureSubscriptions();
 
 const APP_URL: string = (Constants.expoConfig?.extra?.appUrl as string | undefined) ?? "https://ibanova.onrender.com";
 const APP_ORIGIN = new URL(APP_URL).origin;
@@ -88,6 +90,25 @@ async function handle(method: string, args: Record<string, unknown>): Promise<un
       });
       return r.success;
     }
+    // Abonelik (bkz. subscription.ts)
+    case "subStatus":
+      return Sub.getStatus();
+    case "subPlans":
+      return Sub.getPlans();
+    case "subPurchase":
+      return Sub.purchase(String(args.planId ?? ""));
+    case "subRestore":
+      return Sub.restore();
+    case "subLogin":
+      return Sub.logIn(String(args.userId ?? ""));
+    case "subLogout":
+      return Sub.logOut();
+    case "subManage":
+      return Sub.openManagement();
+    case "quotaGet":
+      return Sub.quotaGet();
+    case "quotaSet":
+      return Sub.quotaSet(args.value);
     default:
       throw new Error(`Bilinmeyen işlem: ${method}`);
   }
@@ -129,6 +150,17 @@ export default function App() {
     });
     return () => sub.remove();
   }, []);
+
+  // Abonelik durumu değişince (satın alma, yenileme, iptal, başka cihazda alım) sayfaya bildir
+  useEffect(
+    () =>
+      Sub.onStatusChange((status) => {
+        web.current?.injectJavaScript(
+          `window.dispatchEvent(new CustomEvent("ibanova:sub", { detail: ${JSON.stringify(status)} })); true;`,
+        );
+      }),
+    [],
+  );
 
   const reply = useCallback((id: number, ok: boolean, value: unknown) => {
     web.current?.injectJavaScript(`window.__ibanovaResolve(${Number(id)}, ${ok}, ${JSON.stringify(value ?? null)}); true;`);

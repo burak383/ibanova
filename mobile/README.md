@@ -2,7 +2,8 @@
 
 Canlı web uygulamasını (`https://ibanova.onrender.com`) tam ekran açan Expo uygulaması. Web'in tek başına
 yapamadığı telefon özelliklerini bir köprüyle sağlar: paylaşım menüsü, QR görselini paylaşma/kaydetme, pano,
-titreşim ve Face ID / parmak izi kilidi. Köprünün web tarafı: `../src/lib/native.ts`.
+titreşim, Face ID / parmak izi kilidi ve abonelik (RevenueCat, `subscription.ts`). Köprünün web tarafı:
+`../src/lib/native.ts` ve `../src/lib/subscription.ts`.
 
 - Paket adı / Bundle ID: `com.ibanova.app`
 - Adres: `app.json` > `expo.extra.appUrl`
@@ -21,6 +22,17 @@ npx eas-cli@latest build -p ios --profile production       # App Store için (Ap
 
 Android imzalama anahtarını ilk derlemede EAS'ın oluşturmasına izin verin ("Generate a new keystore" > Yes);
 anahtar Expo hesabınızda saklanır. Telefona doğrudan kurulabilen deneme sürümü için: `--profile preview` (.apk).
+
+## Abonelik (RevenueCat)
+
+`app.json` > `expo.extra` içine RevenueCat'in **public** SDK anahtarlarını girin (gizli değildir, uygulamaya gömülür):
+
+- `revenuecatIosKey`: `appl_...`
+- `revenuecatAndroidKey`: `goog_...`
+- `revenuecatEntitlement`: `premium` (RevenueCat'teki entitlement kimliğiyle aynı olmalı)
+
+Anahtarlar boşken abonelik kapalıdır ve uygulama herkese sınırsızdır. Anahtarları değiştirdikten sonra yeni
+derleme gerekir. Satın alma Expo Go'da çalışmaz; EAS derlemesiyle (TestFlight / Play dahili test) deneyin.
 
 ## Test
 

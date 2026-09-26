@@ -15,3 +15,4 @@ export interface PolicyInfo {
 export const SON_GUNCELLEME: string;
 export function privacyPolicy(info?: PolicyInfo): PolicyDoc;
 export function deletionPage(info?: PolicyInfo): PolicyDoc;
+export function termsPage(info?: PolicyInfo): PolicyDoc;

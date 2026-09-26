@@ -14,6 +14,9 @@ import uuid
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
+# Web sürümü yalnızca uygulamada açılır; testler tarayıcıda çalıştığı için test bayrağıyla açık tutulur
+WEB_TEST = "try { localStorage.setItem('ibanova:web', '1') } catch (e) {}"
+
 URL = os.environ.get("E2E_URL", "http://localhost:8080/")
 SERVER_LOG = os.environ.get("SERVER_LOG", "/tmp/ib-server.log")
 ORIGIN = urlparse(URL).netloc
@@ -28,6 +31,7 @@ def check(name, cond, extra=""):
 
 def new_page(b):
     ctx = b.new_context(viewport={"width": 393, "height": 852})
+    ctx.add_init_script(WEB_TEST)
     pg = ctx.new_page()
     pg.on(
         "console",

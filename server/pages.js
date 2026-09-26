@@ -2,7 +2,7 @@
  * JavaScript gerektirmeyen, sunucunun doğrudan ürettiği sayfalar: /gizlilik ve /hesap-silme.
  * Google Play bu adresleri ister ve denetim araçları sayfayı betik çalıştırmadan okuyabilmelidir.
  */
-import { SON_GUNCELLEME, deletionPage, privacyPolicy } from "../shared/policy.js";
+import { SON_GUNCELLEME, deletionPage, privacyPolicy, termsPage } from "../shared/policy.js";
 
 const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -136,8 +136,21 @@ export function supportHtml({ sorumlu, eposta } = {}) {
     },
     nav: [
       ["/gizlilik", "Gizlilik Politikası"],
+      ["/kosullar", "Kullanım Koşulları"],
       ["/hesap-silme", "Hesap ve veri silme"],
-      ["/", "Ibanova'yı aç"],
+    ],
+  });
+}
+
+/** Kullanım Koşulları (abonelik koşulları dahil): /kosullar */
+export function termsHtml(info) {
+  return render({
+    title: "Ibanova Kullanım Koşulları",
+    eyebrow: "Kullanım ve abonelik koşulları",
+    doc: termsPage(info),
+    nav: [
+      ["/gizlilik", "Gizlilik Politikası"],
+      ["/destek", "Destek"],
     ],
   });
 }

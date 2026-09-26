@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { branchKey } from "./subeler.js";
 import { EmailTakenError } from "./store.js";
-import { deletionHtml, privacyHtml, supportHtml } from "./pages.js";
+import { deletionHtml, privacyHtml, supportHtml, termsHtml } from "./pages.js";
 
 export const MIN_PASSWORD = 8;
 const RESET_TTL_MS = 60 * 60_000; // şifre sıfırlama bağlantısı 1 saat geçerli
@@ -53,6 +53,8 @@ export function createApp({
   corsOrigins = [],
   trustProxy = false,
   policyInfo = {},
+  /** Hesap silindikten sonra çağrılır (ör. RevenueCat abone kaydını silmek için); hatası yanıtı bozmaz */
+  onAccountDeleted = null,
 }) {
   const maxAttempts = rateLimit.maxAttempts ?? 5;
   const windowMs = rateLimit.windowMs ?? 15 * 60_000;
@@ -314,6 +316,13 @@ export function createApp({
     }
     await store.remove(user.id);
     failures.delete(key);
+    if (onAccountDeleted) {
+      try {
+        await onAccountDeleted(user.id);
+      } catch (e) {
+        console.error("Hesap silme sonrası temizlik başarısız:", e instanceof Error ? e.message : e);
+      }
+    }
     res.json({ ok: true });
   });
 
@@ -337,6 +346,7 @@ export function createApp({
   app.get(["/gizlilik", "/privacy"], (_req, res) => sendPage(res, privacyHtml(pageInfo())));
   app.get(["/hesap-silme", "/delete-account"], (_req, res) => sendPage(res, deletionHtml(pageInfo())));
   app.get(["/destek", "/support"], (_req, res) => sendPage(res, supportHtml(pageInfo())));
+  app.get(["/kosullar", "/terms"], (_req, res) => sendPage(res, termsHtml(pageInfo())));
 
   // ---- derlenmiş ön yüz (tek serviste yayın) ----
   const indexFile = staticDir ? path.join(staticDir, "index.html") : null;

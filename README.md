@@ -95,6 +95,8 @@ Profil > "Veri gizliliği ve KVKK" ve kayıt ekranı, uygulamanın gerçekte iş
 ## Nasıl çalışır
 
 - **Hesap isteğe bağlıdır.** Hesapsız kullanımda tüm veriler yalnızca cihazda kalır. Hesap açılınca geçmiş, kayıtlı IBAN'lar, ayarlar ve ad sunucuyla senkronize edilir; aynı hesapla başka cihazda giriş yapınca veriler oraya da gelir. Çıkış yapmak ya da hesabı silmek cihazdaki veriyi silmez.
+- **Abonelik:** Ücretsiz planda her gün 1 geçerli IBAN'ın sonucu görülür (hatalı IBAN hak harcamaz; aynı gün aynı IBAN tekrar açılabilir). Sınırsız kullanım için Ibanova Premium (aylık/yıllık) App Store / Google Play üzerinden, RevenueCat ile satılır. Hak cihazda ve telefonun anahtarlığında tutulur. Mobil uygulamada RevenueCat anahtarı girilmemişse abonelik kapalıdır ve herkes sınırsız kullanır.
+- **Web sürümü kapalı:** Uygulama yalnızca mobil uygulamada açılır; tarayıcıdan girenler indirme sayfasını görür. Tarayıcıda yalnızca e-postadaki şifre sıfırlama bağlantısı ve sunucunun verdiği sayfalar (`/gizlilik`, `/hesap-silme`, `/destek`, `/kosullar`) çalışır. Yerel geliştirmede (`npm run dev`) web açıktır.
 - Yeni kullanıcı boş bir uygulamayla başlar. Profil > ⋯ > "Verileri sıfırla" cihazdaki (ve giriş yapıldıysa hesaptaki) verileri temizler.
 - Banka kodu tablosu en yaygın bankaları kapsar; listede olmayan kodlar "Bilinmeyen banka" görünür. Banka görselleri harici bir kaynağa bağlı değildir.
 - Cihaz kilidi (Face ID / parmak izi / Windows Hello) yalnızca bu cihazda uygulamayı açarken kimlik sorar; HTTPS gerektirir (Render adresi HTTPS'dir).
@@ -109,13 +111,16 @@ Uçtan uca testler (Playwright, Python), `npm run build` sonrası sunucu çalı�
 - `e2e/smoke.py`: genel akış, 135 kontrol
 - `e2e/fixes.py`: hedefli regresyon kontrolleri, 9 kontrol
 - `e2e/hesap.py`: hesap, şifre değişimi, kilit, silme, şube adı, 25 kontrol (sunucuyu `IBANOVA_SUBE_XML=e2e/fixtures/subeler-ornek.xml` ile başlatın)
-- `e2e/yayin.py`: boş ilk açılış, harici kaynak yok, KVKK, şifre kuralı, şifremi unuttum, 24 kontrol (sunucu çıktısını `SERVER_LOG` ile verin)
+- `e2e/yayin.py`: boş ilk açılış, harici kaynak yok, KVKK, şifre kuralı, şifremi unuttum, 27 kontrol (sunucu çıktısını `SERVER_LOG` ile verin)
+- `e2e/uygulama.py`: mobil uygulama köprüsü, 7 kontrol
+- `e2e/abonelik.py`: günlük ücretsiz hak, abonelik ekranı, satın alma/geri yükleme, kapalı web sürümü, 34 kontrol
 
-Testler örnek verilerle çalışmak için tarayıcıda `localStorage["ibanova:demo"] = "1"` ayarlar; gerçek kullanıcılar bu modla karşılaşmaz.
+Testler örnek verilerle çalışmak için tarayıcıda `localStorage["ibanova:demo"] = "1"`, örneksiz web testi için `localStorage["ibanova:web"] = "1"` ayarlar; gerçek kullanıcılar bu modlarla karşılaşmaz.
 
 ## Yapı
 
-- `src/screens/`: Ana Sayfa, Geçmiş, Kayıtlı IBAN'lar, Profil, Hesap, Şifre Sıfırlama, Gizlilik (KVKK), IBAN Detayı, QR Kod
+- `src/screens/`: Ana Sayfa, Geçmiş, Kayıtlı IBAN'lar, Profil, Hesap, Şifre Sıfırlama, Gizlilik (KVKK), IBAN Detayı, QR Kod, Abonelik, Uygulamayı İndir
+- `src/lib/quota.ts`: günlük ücretsiz sorgu hakkı; `src/lib/subscription.ts`: abonelik köprüsü
 - `src/lib/iban.ts`: MOD-97 doğrulama, biçimlendirme, banka kodu tablosu
 - `src/lib/router.ts`: hash tabanlı yönlendirme (`#/gecmis`, `#/iban/<IBAN>`, `#/hesap`, `#/gizlilik`, `#/sifre-sifirla/<jeton>` …)
 - `src/store.tsx`: yerel veriler (localStorage) ve isteğe bağlı hesap/senkron durumu
