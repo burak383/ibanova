@@ -1,0 +1,105 @@
+# Android derlemesi (EAS Build)
+#
+# Çalıştırma: GitHub > Actions > "Android derlemesi (EAS)" > Run workflow
+#   ya da bir etiket gönderin:  git tag android-v1.0.1; git push origin android-v1.0.1
+#
+# Gereken tek gizli anahtar: EXPO_TOKEN
+#   expo.dev > Account settings > Access tokens > Create token
+#   GitHub > repo > Settings > Secrets and variables > Actions > New repository secret > EXPO_TOKEN
+#
+# Derleme Expo'nun sunucularında yapılır; bu iş yalnızca kontrol eder ve derlemeyi başlatır.
+# Bitince .aab/.apk dosyası expo.dev'deki proje sayfasında (Builds) olur.
+
+name: Android derlemesi (EAS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Derleme profili (production = Google Play için .aab, preview = telefona kurulan .apk)"
+        type: choice
+        options: [production, preview]
+        default: production
+      submit:
+        description: "Bitince Google Play'e (Dahili test, taslak) otomatik gönder (yalnızca production)"
+        type: boolean
+        default: false
+  push:
+    tags: ["android-v*"]
+
+concurrency:
+  group: eas-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Kontrol et ve derlemeyi başlat
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      PROFILE: ${{ inputs.profile || 'production' }}
+      SUBMIT: ${{ inputs.submit && 'true' || 'false' }}
+    steps:
+      - name: EXPO_TOKEN tanımlı mı?
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        working-directory: .
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN gizli anahtarı yok. expo.dev > Access tokens'dan oluşturup repo Settings > Secrets and variables > Actions'a ekleyin."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Tip kontrolü
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx expo lint
+
+      - name: Expo projesine bağlı mı?
+        run: |
+          if ! node -e "const c=require('./app.json');process.exit(c.expo?.extra?.eas?.projectId?0:1)"; then
+            echo "::error::app.json'da EAS projectId yok. Bilgisayarınızda bir kez 'cd mobile; npx eas-cli@latest init' çalıştırıp app.json değişikliğini GitHub'a gönderin."
+            exit 1
+          fi
+
+      - name: RevenueCat Android anahtarı
+        run: |
+          if ! node -e "const c=require('./app.json');process.exit(c.expo?.extra?.revenuecatAndroidKey?0:1)"; then
+            echo "::warning::app.json'da revenuecatAndroidKey boş: bu derlemede abonelik kapalı olur ve herkes sınırsız kullanır."
+          fi
+
+      - name: Derlemeyi başlat
+        run: |
+          ARGS="--platform android --profile $PROFILE --non-interactive --no-wait"
+          if [ "$SUBMIT" = "true" ] && [ "$PROFILE" = "production" ]; then ARGS="$ARGS --auto-submit"; fi
+          echo "eas build $ARGS"
+          eas build $ARGS
+
+      - name: Özet
+        run: |
+          {
+            echo "### Android derlemesi başlatıldı"
+            echo "- Profil: \`$PROFILE\`"
+            echo "- Google Play'e gönderim: $([ "$SUBMIT" = "true" ] && [ "$PROFILE" = "production" ] && echo evet || echo hayır)"
+            echo "- Durum ve indirme: https://expo.dev (proje > Builds)"
+          } >> "$GITHUB_STEP_SUMMARY"
