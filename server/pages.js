@@ -89,3 +89,55 @@ export function deletionHtml(info) {
     ],
   });
 }
+
+/** App Store'un zorunlu tuttuğu destek sayfası (iletişim + sık sorulanlar). */
+export function supportHtml({ sorumlu, eposta } = {}) {
+  const mail = eposta || "[iletişim e-posta adresi]";
+  return render({
+    title: "Ibanova Destek",
+    eyebrow: "Yardım ve iletişim",
+    doc: {
+      taslak: !sorumlu || !eposta,
+      sections: [
+        {
+          title: "Bize ulaşın",
+          paragraphs: [
+            `Soru, öneri ve sorun bildirimleri için ${mail} adresine yazabilirsiniz. ` +
+              "Mesajınızda telefon modelinizi ve sorunu kısaca belirtirseniz daha hızlı yardımcı olabiliriz. " +
+              "Lütfen e-postanıza IBAN, şifre ya da banka bilgisi eklemeyin.",
+          ],
+        },
+        {
+          title: "Ibanova hesabın kime ait olduğunu doğrular mı?",
+          paragraphs: [
+            "Hayır. Ibanova, IBAN'ın yazım ve biçim doğruluğunu (MOD-97) kontrol eder; hesabın var olduğunu ya da " +
+              "kime ait olduğunu doğrulamaz. Para göndermeden önce alıcı adını bankanızın uygulamasında kontrol edin.",
+          ],
+        },
+        {
+          title: "Hesap açmam gerekiyor mu?",
+          paragraphs: [
+            "Hayır. Tüm özellikler hesapsız çalışır ve verileriniz yalnızca cihazınızda kalır. Hesap yalnızca " +
+              "verilerinizi cihazlarınız arasında senkronize etmek için gereklidir.",
+          ],
+        },
+        {
+          title: "Şifremi unuttum",
+          paragraphs: [
+            "Giriş ekranındaki \"Şifremi unuttum\" bağlantısını kullanın. Bu seçenek görünmüyorsa " +
+              `${mail} adresine hesabınızın e-postasından yazın.`,
+          ],
+        },
+        {
+          title: "Hesabımı ve verilerimi nasıl silerim?",
+          paragraphs: ["Adımlar için /hesap-silme sayfasına bakın. Gizlilik politikası: /gizlilik"],
+        },
+      ],
+    },
+    nav: [
+      ["/gizlilik", "Gizlilik Politikası"],
+      ["/hesap-silme", "Hesap ve veri silme"],
+      ["/", "Ibanova'yı aç"],
+    ],
+  });
+}

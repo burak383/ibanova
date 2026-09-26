@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { branchKey } from "./subeler.js";
 import { EmailTakenError } from "./store.js";
-import { deletionHtml, privacyHtml } from "./pages.js";
+import { deletionHtml, privacyHtml, supportHtml } from "./pages.js";
 
 export const MIN_PASSWORD = 8;
 const RESET_TTL_MS = 60 * 60_000; // şifre sıfırlama bağlantısı 1 saat geçerli
@@ -336,6 +336,7 @@ export function createApp({
   const sendPage = (res, html) => res.set({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" }).send(html);
   app.get(["/gizlilik", "/privacy"], (_req, res) => sendPage(res, privacyHtml(pageInfo())));
   app.get(["/hesap-silme", "/delete-account"], (_req, res) => sendPage(res, deletionHtml(pageInfo())));
+  app.get(["/destek", "/support"], (_req, res) => sendPage(res, supportHtml(pageInfo())));
 
   // ---- derlenmiş ön yüz (tek serviste yayın) ----
   const indexFile = staticDir ? path.join(staticDir, "index.html") : null;

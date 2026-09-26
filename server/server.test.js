@@ -256,14 +256,18 @@ describe("yayın ayarları", () => {
   });
 
   it("gizlilik politikası ve hesap silme sayfaları JavaScript'siz HTML olarak sunulur", async () => {
-    for (const p of ["/gizlilik", "/privacy", "/hesap-silme", "/delete-account"]) {
+    for (const p of ["/gizlilik", "/privacy", "/hesap-silme", "/delete-account", "/destek", "/support"]) {
       const r = await fetch(base + p);
       expect(r.status).toBe(200);
       expect(r.headers.get("content-type")).toContain("text/html");
       const html = await r.text();
       expect(html).not.toContain("<script");
-      expect(html).toContain("&lt;script&gt;"); // geliştirici adı kaçışlanmış
+      // geliştirici adını gösteren sayfalarda ad kaçışlanmış olmalı
+      if (!p.includes("destek") && !p.includes("support")) expect(html).toContain("&lt;script&gt;");
     }
+    const destek = await (await fetch(`${base}/destek`)).text();
+    expect(destek).toContain('href="mailto:kvkk@ibanova.example"');
+    expect(destek).toContain("<title>Ibanova Destek</title>");
     const html = await (await fetch(`${base}/gizlilik`)).text();
     expect(html).toContain("<title>Ibanova Gizlilik Politikası</title>");
     expect(html).toContain('href="mailto:kvkk@ibanova.example"');

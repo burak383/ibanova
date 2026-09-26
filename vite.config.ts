@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 
 const API = { target: "http://localhost:8787", changeOrigin: true };
 // Geliştirmede /gizlilik ve /hesap-silme sayfaları da sunucudan gelir
-const API_PROXY = { "/api": API, "/gizlilik": API, "/hesap-silme": API, "/privacy": API, "/delete-account": API };
+const API_PROXY = { "/api": API, "/gizlilik": API, "/hesap-silme": API, "/privacy": API, "/delete-account": API, "/destek": API, "/support": API };
 
 export default defineConfig({
   base: "./",
