@@ -32,6 +32,10 @@
         "android.permission.READ_MEDIA_AUDIO",
         "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -59,7 +63,11 @@
       "appUrl": "https://ibanova.onrender.com",
       "revenuecatIosKey": "",
       "revenuecatAndroidKey": "",
-      "revenuecatEntitlement": "premium"
-    }
+      "revenuecatEntitlement": "premium",
+      "eas": {
+        "projectId": "c1775ff7-48bd-4a56-8045-aa6e5b5bc069"
+      }
+    },
+    "owner": "burak38"
   }
 }
